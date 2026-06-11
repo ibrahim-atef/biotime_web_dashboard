@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/config/api_config.dart';
 import '../../core/di/injection.dart';
+import '../../core/utils/api_connection_help.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/auth_cubit.dart';
@@ -53,12 +53,7 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
   String _friendlyError(Object e) {
     final msg = e.toString();
     if (msg.contains('Failed to fetch') || msg.contains('ClientException')) {
-      return 'Cannot reach the API at ${ApiConfig.baseUrl}.\n\n'
-          'Start PostgreSQL:\n'
-          '  docker compose -f docker-compose.dev.yml up -d\n\n'
-          'Then in biotime_backend:\n'
-          '  npm run setup\n'
-          '  npm run dev';
+      return ApiConnectionHelp.connectionError(api.baseUrl);
     }
     return msg;
   }

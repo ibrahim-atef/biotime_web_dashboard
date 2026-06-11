@@ -32,6 +32,8 @@ class BioTimeApiClient {
   String _baseUrl;
   String? _token;
 
+  String get baseUrl => _baseUrl;
+
   void configure({String? baseUrl, String? token}) {
     if (baseUrl != null) _baseUrl = _normalize(baseUrl);
     if (token != null) _token = token;

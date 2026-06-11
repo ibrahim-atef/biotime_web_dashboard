@@ -113,7 +113,16 @@ class _SignInPageState extends State<SignInPage> {
                             if (kIsWeb) ...[
                               const SizedBox(height: 8),
                               Text(
-                                'أدخل رابط الباك اند على جهازك (مثال ngrok)',
+                                'لا تستخدم localhost من الهاتف — استخدم ngrok أو IP جهازك',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.warning,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'مثال: https://xxxx.ngrok-free.app أو http://192.168.x.x:3000',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                               ),
