@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/config/api_config.dart';
 import '../../core/di/injection.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
@@ -53,7 +54,12 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final config = await api.configGet();
       final syncStatus = await api.syncStatus();
-      final odooStatus = await api.odooConfigGet();
+      Map<String, dynamic> odooStatus = {};
+      try {
+        odooStatus = await api.odooConfigGet();
+      } catch (_) {
+        // Older backend without /odoo/* routes — still show BioTime settings.
+      }
       final odooConfig = (odooStatus['config'] as Map?)?.cast<String, dynamic>() ?? {};
       if (mounted) {
         _serverIp.text = config['serverIp']?.toString() ?? '';
@@ -364,7 +370,7 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           PageHeader(
             title: 'إعدادات البصمة',
-            subtitle: 'BioTime Configuration — ${_config['name'] ?? ''}',
+            subtitle: 'BioTime — ${_config['name'] ?? ''}  •  v${ApiConfig.appVersion}',
             actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
           ),
           const SizedBox(height: 12),
