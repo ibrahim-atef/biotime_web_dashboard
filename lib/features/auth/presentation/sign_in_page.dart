@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../core/config/api_config.dart';
 import '../../../core/di/injection.dart';
@@ -39,9 +42,34 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   Future<void> _loadSavedServer() async {
-    final saved = await session.getBaseUrl();
-    final url = saved ?? ApiConfig.baseUrl;
-    if (mounted) _serverCtrl.text = url;
+    String? url;
+
+    if (kIsWeb) {
+      url = await _loadTunnelUrlFromSite();
+    }
+
+    url ??= await session.getBaseUrl();
+    url ??= ApiConfig.baseUrl;
+
+    if (mounted) {
+      _serverCtrl.text = url;
+      api.configure(baseUrl: url);
+    }
+  }
+
+  /// Public HTTPS URL written by `npm run public` on the dev PC.
+  Future<String?> _loadTunnelUrlFromSite() async {
+    try {
+      final res = await http.get(Uri.base.resolve('tunnel-url.json'));
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final apiUrl = data['apiUrl']?.toString().trim();
+      if (apiUrl == null || apiUrl.isEmpty) return null;
+      if (apiUrl.contains('localhost') || apiUrl.contains('127.0.0.1')) return null;
+      return apiUrl;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

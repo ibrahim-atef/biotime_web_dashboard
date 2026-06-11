@@ -1,29 +1,48 @@
 # BioTime Web Dashboard (حضوري)
 
-Flutter web dashboard for BioTime HR.
-
 **Live site:** https://ibrahim-atef.github.io/biotime_web_dashboard/
 
-## Deploy to GitHub Pages (important)
+## Public API for any mobile network (best setup)
 
-Use **GitHub Actions** as the Pages source — not "Deploy from a branch".
+The website is on GitHub. The API runs on **your PC**. Mobile data / other Wi‑Fi needs an **HTTPS tunnel**.
 
-1. Open https://github.com/ibrahim-atef/biotime_web_dashboard/settings/pages
-2. **Build and deployment → Source:** select **`GitHub Actions`** (not "Deploy from a branch")
-3. Push to `main` or re-run workflow: https://github.com/ibrahim-atef/biotime_web_dashboard/actions
-4. Open https://ibrahim-atef.github.io/biotime_web_dashboard/ — you should see the **login screen**, not this README
+### On your PC (one command)
 
-### If deploy fails with "in progress deployment"
+```bash
+cd ../biotime_backend
+npm run public
+```
 
-1. Open **Actions** → cancel any running **pages build and deployment** workflows
-2. Wait 2 minutes
-3. Re-run **Deploy Flutter Web**
+This starts:
+- Backend on port **3000**
+- **Cloudflare HTTPS tunnel** (works from any phone, any network)
 
-### If you still see README instead of the app
+Copy the printed URL, then update the live site default:
 
-- You are on **Deploy from a branch → main** — switch to **GitHub Actions**
-- Hard refresh: `Ctrl + Shift + R`
-- Repo homepage (`github.com/.../biotime_web_dashboard`) always shows README — the app is only at the **github.io** link above
+```bash
+npm run public:deploy
+```
+
+Or manually push after `npm run public` updates `web/tunnel-url.json`.
+
+### Tester flow
+
+1. Open https://ibrahim-atef.github.io/biotime_web_dashboard/
+2. Login page auto-fills **رابط الباك اند** from `tunnel-url.json`
+3. Sign in with app credentials
+
+**Keep `npm run public` running** while testers use the app.
+
+### Same Wi‑Fi only (no tunnel)
+
+Use `http://YOUR_PC_IP:3000` on login (e.g. `http://192.168.10.32:3000`).
+
+---
+
+## Deploy to GitHub Pages
+
+1. Pages **Source:** `GitHub Actions`
+2. Push to `main` → auto deploy
 
 ## Local development
 
@@ -31,29 +50,3 @@ Use **GitHub Actions** as the Pages source — not "Deploy from a branch".
 flutter pub get
 flutter run -d chrome
 ```
-
-## Backend on your PC (for external testers)
-
-The website is public; the **API runs on your machine**.
-
-### 1. Start backend
-
-```bash
-cd ../biotime_backend
-npm run dev
-```
-
-Verify: http://localhost:3000/api/health
-
-### 2. Expose with ngrok
-
-```bash
-ngrok config add-authtoken YOUR_TOKEN
-ngrok http 3000
-```
-
-### 3. Tester login
-
-Open the live site → enter ngrok URL in **رابط الباك اند** → sign in.
-
-Optional repo secret: `BIOTIME_API_URL` = your ngrok URL (default build uses localhost).
