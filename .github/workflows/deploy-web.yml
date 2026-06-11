@@ -35,12 +35,9 @@ jobs:
             --base-href "/biotime_web_dashboard/" \
             --dart-define=BIOTIME_API_URL="$URL"
 
-      # Puts built site in docs/ on main (matches Pages: main → /docs)
-      - name: Deploy to docs folder on main
+      - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: build/web
-          publish_branch: main
-          destination_dir: docs
-          keep_files: true
+          publish_branch: gh-pages
