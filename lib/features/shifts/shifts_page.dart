@@ -176,7 +176,7 @@ class _ShiftFormDialogState extends State<_ShiftFormDialog> {
               Expanded(child: TextField(controller: _end, decoration: const InputDecoration(labelText: 'نهاية'))),
             ]),
             const SizedBox(height: 8),
-            const Text('الوقت بالساعات العشرية — مثل Odoo', style: TextStyle(fontSize: 11)),
+            const Text('الوقت بالساعات العشرية (8 = 8:00)', style: TextStyle(fontSize: 11)),
           ],
         ),
       ),

@@ -6,6 +6,7 @@ import '../../core/router/app_router.dart';
 import '../../core/utils/entity_id.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
+import '../../core/widgets/list_picker_field.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/sellix_card.dart';
 import '../../core/widgets/status_tag.dart';
@@ -66,7 +67,7 @@ class _ShiftGridListPageState extends State<ShiftGridListPage> {
         children: [
           PageHeader(
             title: 'جدول الشيفتات',
-            subtitle: 'إدارة جداول الشيفتات — نفس منطق Odoo',
+            subtitle: 'إدارة جداول الشيفتات — بيانات محلية',
             actions: [
               IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
               FilledButton.icon(
@@ -306,15 +307,12 @@ class _CreateShiftGridDialogState extends State<_CreateShiftGridDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    DropdownButtonFormField<String?>(
+                    ListPickerField<String>(
+                      label: 'جهاز البصمة',
                       value: _deviceId,
-                      decoration: const InputDecoration(labelText: 'جهاز البصمة'),
-                      items: [
+                      options: [
                         for (final d in _devices)
-                          DropdownMenuItem(
-                            value: EntityId.parse(d['id']),
-                            child: Text(d['name']?.toString() ?? ''),
-                          ),
+                          (value: EntityId.parse(d['id']) ?? '', label: d['name']?.toString() ?? ''),
                       ],
                       onChanged: (v) => setState(() => _deviceId = v),
                     ),

@@ -7,6 +7,7 @@ import '../../core/di/injection.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
+import '../../core/utils/file_download.dart';
 import '../../core/widgets/page_header.dart';
 import 'shift_grid_cell_style.dart';
 import 'shift_grid_helpers.dart';
@@ -77,6 +78,19 @@ class _ShiftGridDetailPageState extends State<ShiftGridDetailPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _exportExcel() async {
+    try {
+      final r = await api.shiftGridExportXlsx(widget.gridId);
+      final base64 = r['base64']?.toString() ?? r['file']?.toString() ?? '';
+      final filename = r['filename']?.toString() ?? 'shift_grid.xlsx';
+      if (base64.isEmpty) throw Exception('ملف فارغ');
+      downloadBase64File(base64, filename, r['mimeType']?.toString() ?? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      _snack('تم تنزيل $filename');
+    } catch (e) {
+      _snack(e.toString());
+    }
+  }
+
   void _startSyncPoll() {
     _stopSyncPoll();
     _syncTimer = Timer.periodic(const Duration(seconds: 2), (_) => _pollSync());
@@ -134,7 +148,7 @@ class _ShiftGridDetailPageState extends State<ShiftGridDetailPage> {
       builder: (ctx) => AlertDialog(
         title: const Text('إنشاء كشف رواتب'),
         content: Text(
-          'سيتم إنشاء كشف رواتب من جدول ${_grid['dateFrom']} إلى ${_grid['dateTo']} وحفظه في Odoo.',
+          'سيتم إنشاء كشف رواتب محلي من جدول ${_grid['dateFrom']} إلى ${_grid['dateTo']}.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
@@ -291,6 +305,7 @@ class _ShiftGridDetailPageState extends State<ShiftGridDetailPage> {
           _ActionBar(
             locked: _locked,
             onSync: _syncStart,
+            onExport: _data.isNotEmpty ? _exportExcel : null,
             onClose: () => _action(() => api.shiftGridClose(widget.gridId)),
             onReopen: () => _action(() => api.shiftGridReopen(widget.gridId)),
             onConfirm: () => _action(() => api.shiftGridConfirm(widget.gridId)),
@@ -516,6 +531,7 @@ class _ActionBar extends StatelessWidget {
     required this.onGenerate,
     required this.state,
     this.onCreatePayroll,
+    this.onExport,
   });
 
   final bool locked;
@@ -525,6 +541,7 @@ class _ActionBar extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onGenerate;
   final VoidCallback? onCreatePayroll;
+  final VoidCallback? onExport;
   final String state;
 
   @override
@@ -537,6 +554,8 @@ class _ActionBar extends StatelessWidget {
           FilledButton.icon(onPressed: onGenerate, icon: const Icon(Icons.table_chart, size: 18), label: const Text('توليد الجدول')),
         if (state != 'setup') ...[
           FilledButton.icon(onPressed: onSync, icon: const Icon(Icons.sync, size: 18), label: const Text('مزامنة البصمات')),
+          if (onExport != null)
+            OutlinedButton.icon(onPressed: onExport, icon: const Icon(Icons.download, size: 18), label: const Text('تصدير Excel')),
           if (onCreatePayroll != null)
             FilledButton.tonalIcon(
               onPressed: onCreatePayroll,

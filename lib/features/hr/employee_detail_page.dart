@@ -101,7 +101,7 @@ class _EmployeeDetailPageState extends State<EmployeeDetailPage> {
       if (mounted) {
         setState(() { _emp = updated; _saving = false; });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم الحفظ — القسم والبيانات تُحدَّث في Odoo وBioTime')),
+          const SnackBar(content: Text('تم الحفظ محلياً')),
         );
       }
     } catch (e) {

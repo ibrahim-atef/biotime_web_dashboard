@@ -11,6 +11,7 @@ import '../../features/hr/employee_detail_page.dart';
 import '../../features/hr/employees_page.dart';
 import '../../features/hr/hr_dashboard_page.dart';
 import '../../features/hr/hr_attendance_page.dart';
+import '../../features/hr/overtime_page.dart';
 import '../../features/hr/settings_page.dart';
 import '../../features/requests/requests_page.dart';
 import '../../features/advances/advances_page.dart';
@@ -44,6 +45,7 @@ abstract final class AppRoutes {
   static const hrShiftAssignments = '/hr/shift-assignments';
   static const hrShiftGrid = '/hr/shift-grid';
   static const hrAttendance = '/hr/attendance';
+  static const hrOvertime = '/hr/overtime';
   static const hrDeductions = '/hr/deductions';
   static const hrAdvances = '/hr/advances';
   static const hrPayroll = '/hr/payroll';
@@ -119,6 +121,7 @@ GoRouter createRouter(AuthCubit auth) {
             ],
           ),
           GoRoute(path: AppRoutes.hrAttendance, pageBuilder: (_, __) => const NoTransitionPage(child: HrAttendancePage())),
+          GoRoute(path: AppRoutes.hrOvertime, pageBuilder: (_, __) => const NoTransitionPage(child: OvertimePage())),
           GoRoute(path: AppRoutes.hrShiftAssignments, pageBuilder: (_, __) => const NoTransitionPage(child: ShiftAssignmentsPage())),
           GoRoute(path: AppRoutes.hrDeductions, pageBuilder: (_, __) => const NoTransitionPage(child: DeductionsPage())),
           GoRoute(path: AppRoutes.hrAdvances, pageBuilder: (_, __) => const NoTransitionPage(child: AdvancesPage())),

@@ -65,21 +65,27 @@ class _EmployeeSearchFieldState extends State<EmployeeSearchField> {
         if (_results.isNotEmpty)
           Card(
             margin: const EdgeInsets.only(top: 4),
-            child: Column(
-              children: [
-                for (final e in _results.take(8))
-                  ListTile(
-                    dense: true,
-                    title: Text(e['displayName']?.toString() ?? e['name']?.toString() ?? ''),
-                    subtitle: Text('كود: ${e['code']?.toString() ?? ''}'),
-                    onTap: () {
-                      final id = e['id']?.toString();
-                      final name = e['displayName']?.toString() ?? e['name']?.toString() ?? '';
-                      setState(() { _selectedId = id; _selectedName = name; _results = []; _ctrl.text = name; });
-                      widget.onSelected?.call(id, name);
-                    },
-                  ),
-              ],
+            clipBehavior: Clip.antiAlias,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 180),
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final e in _results.take(8))
+                    ListTile(
+                      dense: true,
+                      title: Text(e['displayName']?.toString() ?? e['name']?.toString() ?? ''),
+                      subtitle: Text('كود: ${e['code']?.toString() ?? ''}'),
+                      onTap: () {
+                        final id = e['id']?.toString();
+                        final name = e['displayName']?.toString() ?? e['name']?.toString() ?? '';
+                        setState(() { _selectedId = id; _selectedName = name; _results = []; _ctrl.text = name; });
+                        widget.onSelected?.call(id, name);
+                      },
+                    ),
+                ],
+              ),
             ),
           ),
       ],

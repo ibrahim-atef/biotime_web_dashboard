@@ -4,6 +4,7 @@ import '../../core/di/injection.dart';
 import '../../core/utils/entity_id.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/widgets/employee_search_field.dart';
+import '../../core/widgets/list_picker_field.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/sellix_card.dart';
 import '../../core/widgets/status_tag.dart';
@@ -114,7 +115,12 @@ class _AssignmentFormDialogState extends State<_AssignmentFormDialog> {
   String _fmt(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<void> _save() async {
-    if (_employeeId == null) return;
+    if (_employeeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اختر موظفاً من نتائج البحث')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       await api.shiftAssignmentCreate({
@@ -143,30 +149,27 @@ class _AssignmentFormDialogState extends State<_AssignmentFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              EmployeeSearchField(onSelected: (id, _) => _employeeId = id),
+              EmployeeSearchField(onSelected: (id, _) => setState(() => _employeeId = id)),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _type,
-                decoration: const InputDecoration(labelText: 'نوع التعيين'),
-                items: const [
-                  DropdownMenuItem(value: 'weekly_period', child: Text('نمط أسبوعي مع فترة')),
-                  DropdownMenuItem(value: 'date_range', child: Text('فترة زمنية + شيفت ثابت')),
-                  DropdownMenuItem(value: 'permanent', child: Text('ثابت دائم')),
-                  DropdownMenuItem(value: 'weekly', child: Text('نمط أسبوعي دائم')),
+              ListPickerField<String>(
+                label: 'نوع التعيين',
+                value: _type,
+                options: const [
+                  (value: 'weekly_period', label: 'نمط أسبوعي مع فترة'),
+                  (value: 'date_range', label: 'فترة زمنية + شيفت ثابت'),
+                  (value: 'permanent', label: 'ثابت دائم'),
+                  (value: 'weekly', label: 'نمط أسبوعي دائم'),
                 ],
-                onChanged: (v) => setState(() => _type = v ?? _type),
+                onChanged: (v) => setState(() => _type = v),
               ),
               if (_type == 'permanent' || _type == 'date_range') ...[
                 const SizedBox(height: 8),
-                DropdownButtonFormField<String?>(
-                  initialValue: _shiftId,
-                  decoration: const InputDecoration(labelText: 'الشيفت'),
-                  items: [
+                ListPickerField<String>(
+                  label: 'الشيفت',
+                  value: _shiftId,
+                  options: [
                     for (final s in widget.shifts)
-                      DropdownMenuItem(
-                        value: EntityId.parse(s['id']),
-                        child: Text('${s['code']} - ${s['name']}'),
-                      ),
+                      (value: EntityId.parse(s['id']) ?? '', label: '${s['code']} - ${s['name']}'),
                   ],
                   onChanged: (v) => setState(() => _shiftId = v),
                 ),

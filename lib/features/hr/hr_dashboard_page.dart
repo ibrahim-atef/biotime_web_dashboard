@@ -110,7 +110,7 @@ class _HrDashboardPageState extends State<HrDashboardPage> {
           const SizedBox(height: 16),
           const SellixCard(
             child: Text(
-              'كل العمليات تُحفظ مباشرة في Odoo — جدول الشيفتات، الاستقطاعات، والرواتب متاحة من القائمة الجانبية.',
+              'كل العمليات تُحفظ محلياً في PostgreSQL — جدول الشيفتات، الاستقطاعات، والرواتب من القائمة الجانبية.',
               style: TextStyle(color: AppColors.textSecondary, height: 1.5),
             ),
           ),

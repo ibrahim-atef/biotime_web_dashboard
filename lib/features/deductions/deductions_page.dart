@@ -4,10 +4,20 @@ import '../../core/di/injection.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/widgets/employee_search_field.dart';
+import '../../core/widgets/list_picker_field.dart';
 import '../../core/widgets/hr_local_data_info.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/sellix_card.dart';
 import '../../core/widgets/status_tag.dart';
+
+const _kDeductionTypesFallback = [
+  {'value': 'manual_debit', 'label': 'خصم يدوي'},
+  {'value': 'check', 'label': 'شيك'},
+  {'value': 'fine', 'label': 'غرامة'},
+  {'value': 'admin', 'label': 'إداري'},
+  {'value': 'absence', 'label': 'غياب'},
+  {'value': 'late', 'label': 'تأخير'},
+];
 
 class DeductionsPage extends StatefulWidget {
   const DeductionsPage({super.key});
@@ -69,7 +79,18 @@ class _DeductionsPageState extends State<DeductionsPage> {
   String _typeLabel(String code) => _typeLabels[code] ?? code;
 
   Future<void> _add() async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => _DeductionFormDialog(types: _types));
+    var types = _types;
+    if (types.isEmpty) {
+      try {
+        types = await api.deductionTypes();
+        if (mounted && types.isNotEmpty) setState(() => _types = types);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => _DeductionFormDialog(types: types.isNotEmpty ? types : _kDeductionTypesFallback),
+    );
     if (ok == true) _load();
   }
 
@@ -148,7 +169,15 @@ class _DeductionsPageState extends State<DeductionsPage> {
           if (_loading)
             const Center(child: CircularProgressIndicator())
           else if (items.isEmpty)
-            const HrEmptyListCard(message: 'لا توجد استقطاعات.\nأضف استقطاعاً جديداً واختر موظفاً مُزامَناً.')
+            HrEmptyListCard(
+              message: _stateFilter == 'applied'
+                  ? 'لا توجد استقطاعات مطبّقة.\nجرّب «الكل» أو «معلّق»، أو أنشئ استقطاعاً جديداً.'
+                  : _stateFilter == 'pending'
+                      ? 'لا توجد استقطاعات معلّقة.\nأضف استقطاعاً جديداً من الزر أعلاه.'
+                      : 'لا توجد استقطاعات.\nأضف استقطاعاً جديداً واختر موظفاً مُزامَناً.',
+              actionLabel: _stateFilter == null ? 'استقطاع جديد' : null,
+              onAction: _stateFilter == null ? _add : null,
+            )
           else
             SellixCard(
               padding: EdgeInsets.zero,
@@ -193,10 +222,24 @@ class _DeductionFormDialog extends StatefulWidget {
 
 class _DeductionFormDialogState extends State<_DeductionFormDialog> {
   String? _employeeId;
-  String _type = 'manual_debit';
+  late String _type;
   final _amount = TextEditingController();
   final _note = TextEditingController();
   bool _saving = false;
+
+  List<Map<String, dynamic>> get _types =>
+      widget.types.isNotEmpty ? widget.types : _kDeductionTypesFallback;
+
+  List<({String value, String label})> get _typeOptions => [
+        for (final t in _types)
+          (value: t['value']?.toString() ?? '', label: t['label']?.toString() ?? ''),
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    _type = _types.first['value']?.toString() ?? 'manual_debit';
+  }
 
   @override
   void dispose() {
@@ -206,14 +249,19 @@ class _DeductionFormDialogState extends State<_DeductionFormDialog> {
   }
 
   Future<void> _save() async {
-    if (_employeeId == null) return;
+    if (_employeeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اختر موظفاً من نتائج البحث')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       await api.deductionCreate({
         'employeeId': _employeeId,
-        'deductionType': _type,
+        'type': _type,
         'amount': double.tryParse(_amount.text) ?? 0,
-        'note': _note.text,
+        'notes': _note.text.trim(),
       });
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -226,27 +274,37 @@ class _DeductionFormDialogState extends State<_DeductionFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final maxH = MediaQuery.sizeOf(context).height * 0.55;
+
     return AlertDialog(
       title: const Text('استقطاع جديد'),
       content: SizedBox(
         width: 380,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            EmployeeSearchField(onSelected: (id, _) => _employeeId = id),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _type,
-              decoration: const InputDecoration(labelText: 'نوع الخصم'),
-              items: [
-                for (final t in widget.types)
-                  DropdownMenuItem(value: t['value']?.toString(), child: Text(t['label']?.toString() ?? '')),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxH),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                EmployeeSearchField(onSelected: (id, _) => setState(() => _employeeId = id)),
+                const SizedBox(height: 12),
+                ListPickerField<String>(
+                  label: 'نوع الخصم',
+                  value: _type,
+                  options: _typeOptions,
+                  onChanged: (v) => setState(() => _type = v),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _amount,
+                  decoration: const InputDecoration(labelText: 'المبلغ'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: 8),
+                TextField(controller: _note, decoration: const InputDecoration(labelText: 'ملاحظات')),
               ],
-              onChanged: (v) => setState(() => _type = v ?? _type),
             ),
-            TextField(controller: _amount, decoration: const InputDecoration(labelText: 'المبلغ'), keyboardType: TextInputType.number),
-            TextField(controller: _note, decoration: const InputDecoration(labelText: 'ملاحظات')),
-          ],
+          ),
         ),
       ),
       actions: [

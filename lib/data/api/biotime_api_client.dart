@@ -26,6 +26,24 @@ class EmployeesPageResult {
   final int offset;
 }
 
+class AttendancePageResult {
+  const AttendancePageResult({
+    required this.items,
+    required this.total,
+    required this.hasMore,
+    required this.offset,
+    required this.dateFrom,
+    required this.dateTo,
+  });
+
+  final List<Map<String, dynamic>> items;
+  final int total;
+  final bool hasMore;
+  final int offset;
+  final String dateFrom;
+  final String dateTo;
+}
+
 class BioTimeApiClient {
   BioTimeApiClient({String? baseUrl}) : _baseUrl = _normalize(baseUrl ?? ApiConfig.baseUrl);
 
@@ -345,6 +363,27 @@ class BioTimeApiClient {
     return _unwrap(await _call('/api/biotime/config/sync-status', {}));
   }
 
+  Future<Map<String, dynamic>> odooConfigGet() async {
+    return _unwrap(await _call('/api/biotime/odoo/config/get', {}));
+  }
+
+  Future<Map<String, dynamic>> odooConfigUpdate(Map<String, dynamic> fields) async {
+    return _unwrap(await _call('/api/biotime/odoo/config/update', fields));
+  }
+
+  Future<Map<String, dynamic>> odooTestConnection() async {
+    return _unwrap(await _call('/api/biotime/odoo/config/test-connection', {}));
+  }
+
+  Future<Map<String, dynamic>> odooPushAll({void Function(String message)? onProgress}) async {
+    final data = _unwrap(await _call('/api/biotime/odoo/push-all', {}));
+    final jobId = data['jobId']?.toString();
+    if (jobId != null && data['queued'] == true) {
+      return _waitForJob(jobId, onProgress: onProgress);
+    }
+    return data;
+  }
+
   Future<List<Map<String, dynamic>>> syncJobsList() async {
     final data = _unwrap(await _call('/api/biotime/config/sync-jobs/list', {}));
     return _listFromData(data);
@@ -361,13 +400,31 @@ class BioTimeApiClient {
     }));
   }
 
-  Future<List<Map<String, dynamic>>> attendanceList({String? dateFrom, String? dateTo, Object? employeeId}) async {
+  Future<AttendancePageResult> attendanceList({
+    String? dateFrom,
+    String? dateTo,
+    Object? employeeId,
+    String? search,
+    int limit = 50,
+    int offset = 0,
+  }) async {
     final data = _unwrap(await _call('/api/biotime/attendance/list', {
       if (dateFrom != null) 'dateFrom': dateFrom,
       if (dateTo != null) 'dateTo': dateTo,
       if (employeeId != null) 'employeeId': employeeId,
+      if (search != null && search.isNotEmpty) 'search': search,
+      'limit': limit,
+      'offset': offset,
     }));
-    return _listFromData(data);
+    final items = _listFrom(data['records']);
+    return AttendancePageResult(
+      items: items,
+      total: (data['total'] as num?)?.toInt() ?? items.length,
+      hasMore: data['hasMore'] == true,
+      offset: (data['offset'] as num?)?.toInt() ?? offset,
+      dateFrom: data['dateFrom']?.toString() ?? dateFrom ?? '',
+      dateTo: data['dateTo']?.toString() ?? dateTo ?? '',
+    );
   }
 
   Future<Map<String, dynamic>> attendanceGenerate({
@@ -375,13 +432,38 @@ class BioTimeApiClient {
     required String dateTo,
     Object? shiftGridId,
     bool skipExisting = false,
+    void Function(String message)? onProgress,
   }) async {
-    return _unwrap(await _call('/api/biotime/attendance/generate', {
+    final data = _unwrap(await _call('/api/biotime/attendance/generate', {
       'dateFrom': dateFrom,
       'dateTo': dateTo,
       if (shiftGridId != null) 'shiftGridId': shiftGridId,
       'skipExisting': skipExisting,
     }));
+    final jobId = data['jobId']?.toString();
+    if (jobId != null && data['queued'] == true) {
+      return _waitForJob(jobId, onProgress: onProgress);
+    }
+    return data;
+  }
+
+  Future<Map<String, dynamic>> jobStatus(String jobId) async {
+    return _unwrap(await _call('/api/biotime/jobs/status', {'jobId': jobId}));
+  }
+
+  Future<Map<String, dynamic>> _waitForJob(String jobId, {void Function(String message)? onProgress}) async {
+    for (var i = 0; i < 900; i++) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      final st = await jobStatus(jobId);
+      final status = st['status']?.toString() ?? '';
+      final message = st['message']?.toString() ?? '';
+      onProgress?.call(message.isNotEmpty ? message : status);
+      if (status == 'done') return st;
+      if (status == 'failed' || status == 'cancelled') {
+        throw BioTimeApiException(message.isNotEmpty ? message : 'فشلت العملية');
+      }
+    }
+    throw BioTimeApiException('انتهت مهلة انتظار العملية — جرّب لاحقاً من شاشة الحضور');
   }
 
   Future<Map<String, dynamic>> requestsMy() async {
@@ -476,6 +558,100 @@ class BioTimeApiClient {
     return _unwrap(await _call('/api/biotime/payroll/export-fawry', {'payrollId': payrollId}));
   }
 
+  Future<Map<String, dynamic>> payrollExportXlsx(Object payrollId) async {
+    return _unwrap(await _call('/api/biotime/payroll/export-xlsx', {'payrollId': payrollId}));
+  }
+
+  Future<Map<String, dynamic>> payrollExportCashFawry(Object payrollId) async {
+    return _unwrap(await _call('/api/biotime/payroll/export-cash-fawry', {'payrollId': payrollId}));
+  }
+
+  Future<Map<String, dynamic>> shiftGridExportXlsx(Object gridId) async {
+    return _unwrap(await _call('/api/biotime/shift-grid/export-xlsx', {'gridId': gridId}));
+  }
+
+  Future<Map<String, dynamic>> shiftGridImportXlsx(Object gridId, String base64) async {
+    return _unwrap(await _call('/api/biotime/shift-grid/import-xlsx', {'gridId': gridId, 'base64': base64}));
+  }
+
+  Future<List<Map<String, dynamic>>> overtimeList({String? state}) async {
+    final data = _unwrap(await _call('/api/biotime/overtime/list', {if (state != null) 'state': state}));
+    return _listFromData(data);
+  }
+
+  Future<Map<String, dynamic>> overtimeGenerate({
+    required String dateFrom,
+    required String dateTo,
+  }) async {
+    final data = _unwrap(await _call('/api/biotime/overtime/generate', {
+      'dateFrom': dateFrom,
+      'dateTo': dateTo,
+    }));
+    final jobId = data['jobId']?.toString();
+    if (jobId != null && data['queued'] == true) {
+      return _waitForJob(jobId);
+    }
+    return data;
+  }
+
+  Future<void> overtimeApprove(Object id) async {
+    _unwrap(await _call('/api/biotime/overtime/approve', {'id': id}));
+  }
+
+  Future<void> overtimeReject(Object id, String reason) async {
+    _unwrap(await _call('/api/biotime/overtime/reject', {'id': id, 'reason': reason}));
+  }
+
+  Future<Map<String, dynamic>> salaryRequestCreate({
+    required double amount,
+    required String reason,
+  }) async {
+    return _unwrap(await _call('/api/biotime/requests/salary/create', {
+      'amount': amount,
+      'reason': reason,
+    }));
+  }
+
+  Future<Map<String, dynamic>> shiftChangeRequestCreate({
+    required String newShiftId,
+    required String dateFrom,
+    required String dateTo,
+    String? currentShiftId,
+    required String reason,
+  }) async {
+    return _unwrap(await _call('/api/biotime/requests/shift-change/create', {
+      'newShiftId': newShiftId,
+      if (currentShiftId != null) 'currentShiftId': currentShiftId,
+      'dateFrom': dateFrom,
+      'dateTo': dateTo,
+      'reason': reason,
+    }));
+  }
+
+  Future<Map<String, dynamic>> certificateRequestCreate({
+    required String certificateType,
+    required String reason,
+  }) async {
+    return _unwrap(await _call('/api/biotime/requests/certificate/create', {
+      'certificateType': certificateType,
+      'reason': reason,
+    }));
+  }
+
+  Future<Map<String, dynamic>> attendanceEditRequestCreate({
+    required String date,
+    String? requestedCheckIn,
+    String? requestedCheckOut,
+    required String reason,
+  }) async {
+    return _unwrap(await _call('/api/biotime/requests/attendance-edit/create', {
+      'date': date,
+      if (requestedCheckIn != null) 'requestedCheckIn': requestedCheckIn,
+      if (requestedCheckOut != null) 'requestedCheckOut': requestedCheckOut,
+      'reason': reason,
+    }));
+  }
+
   Future<List<Map<String, dynamic>>> myPayroll() async {
     final data = _unwrap(await _call('/api/biotime/payroll/my', {}));
     return _listFromData(data);
@@ -485,6 +661,8 @@ class BioTimeApiClient {
 
   Future<List<Map<String, dynamic>>> deductionTypes() async {
     final data = _unwrap(await _call('/api/biotime/deductions/types', {}));
+    final types = _listFrom(data['types']);
+    if (types.isNotEmpty) return types;
     return _listFromData(data);
   }
 
@@ -562,7 +740,7 @@ class BioTimeApiClient {
   List<Map<String, dynamic>> _listFromData(Map<String, dynamic> data) {
     for (final key in [
       'items', 'records', 'employees', 'grids', 'payrolls', 'shifts',
-      'assignments', 'deductions', 'advances', 'devices', 'departments', 'users',
+      'assignments', 'deductions', 'advances', 'devices', 'departments', 'users', 'types',
     ]) {
       final list = _listFrom(data[key]);
       if (list.isNotEmpty) return list;

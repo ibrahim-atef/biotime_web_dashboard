@@ -65,7 +65,7 @@ class _PayrollDetailPageState extends State<PayrollDetailPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('تأكيد وإرسال نهائي'),
-        content: const Text('سيتم: تأكيد الكشف + إنشاء القيد المحاسبي + إرسال واتساب (إن وُجد).'),
+        content: const Text('سيتم تأكيد كشف الرواتب محلياً في النظام فقط.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تنفيذ')),
@@ -74,15 +74,15 @@ class _PayrollDetailPageState extends State<PayrollDetailPage> {
     );
     if (ok != true) return;
     await _run(() async {
-      await api.payrollFinalize(widget.payrollId, actions: ['confirm', 'journal', 'whatsapp']);
+      await api.payrollFinalize(widget.payrollId, actions: ['confirm']);
     }, 'تم التنفيذ');
   }
 
-  Future<void> _exportFawry() async {
+  Future<void> _downloadExport(Future<Map<String, dynamic>> Function() fetch, String fallbackName) async {
     try {
-      final r = await api.payrollExportFawry(widget.payrollId);
-      final filename = r['filename']?.toString() ?? 'fawry.xlsx';
-      final base64 = r['base64']?.toString() ?? '';
+      final r = await fetch();
+      final filename = r['filename']?.toString() ?? fallbackName;
+      final base64 = r['base64']?.toString() ?? r['file']?.toString() ?? '';
       final mime = r['mimeType']?.toString() ?? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       if (base64.isEmpty) throw Exception('ملف فارغ من الخادم');
       downloadBase64File(base64, filename, mime);
@@ -93,6 +93,12 @@ class _PayrollDetailPageState extends State<PayrollDetailPage> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
+
+  Future<void> _exportFawry() => _downloadExport(() => api.payrollExportFawry(widget.payrollId), 'fawry.xlsx');
+
+  Future<void> _exportPayroll() => _downloadExport(() => api.payrollExportXlsx(widget.payrollId), 'payroll.xlsx');
+
+  Future<void> _exportCashFawry() => _downloadExport(() => api.payrollExportCashFawry(widget.payrollId), 'cash_fawry.xlsx');
 
   String _stateAr(String s) {
     switch (s) {
@@ -154,9 +160,19 @@ class _PayrollDetailPageState extends State<PayrollDetailPage> {
                   label: const Text('إرسال نهائي'),
                 ),
               OutlinedButton.icon(
+                onPressed: _exportPayroll,
+                icon: const Icon(Icons.table_chart, size: 18),
+                label: const Text('كشف Excel'),
+              ),
+              OutlinedButton.icon(
                 onPressed: _exportFawry,
                 icon: const Icon(Icons.download, size: 18),
-                label: const Text('تصدير Fawry'),
+                label: const Text('Fawry'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _exportCashFawry,
+                icon: const Icon(Icons.payments_outlined, size: 18),
+                label: const Text('نقدي'),
               ),
             ],
           ),

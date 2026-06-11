@@ -45,6 +45,37 @@ class _AdvancesPageState extends State<AdvancesPage> with SingleTickerProviderSt
     }
   }
 
+  Future<void> _openNewAdvance() async {
+    final type = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('نوع السلفة'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.payments_outlined),
+              title: const Text('سلفة قصيرة'),
+              onTap: () => Navigator.pop(ctx, 'short'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: const Text('سلفة طويلة (أقساط)'),
+              onTap: () => Navigator.pop(ctx, 'long'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (type == null || !mounted) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => type == 'short' ? const _ShortAdvanceForm() : const _LongAdvanceForm(),
+    );
+    if (ok == true) _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -56,23 +87,10 @@ class _AdvancesPageState extends State<AdvancesPage> with SingleTickerProviderSt
             subtitle: 'سلف قصيرة وطويلة الأجل',
             actions: [
               IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
-              PopupMenuButton<String>(
-                onSelected: (v) async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (_) => v == 'short' ? const _ShortAdvanceForm() : const _LongAdvanceForm(),
-                  );
-                  if (ok == true) _load();
-                },
-                itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'short', child: Text('سلفة قصيرة')),
-                  const PopupMenuItem(value: 'long', child: Text('سلفة طويلة (أقساط)')),
-                ],
-                child: FilledButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('سلفة جديدة'),
-                ),
+              FilledButton.icon(
+                onPressed: _openNewAdvance,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('سلفة جديدة'),
               ),
             ],
           ),
@@ -161,7 +179,12 @@ class _ShortAdvanceFormState extends State<_ShortAdvanceForm> {
   }
 
   Future<void> _save() async {
-    if (_employeeId == null) return;
+    if (_employeeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اختر موظفاً من نتائج البحث')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       await api.advanceShortCreate({'employeeId': _employeeId, 'amount': double.tryParse(_amount.text) ?? 0});
@@ -178,7 +201,7 @@ class _ShortAdvanceFormState extends State<_ShortAdvanceForm> {
       content: SizedBox(
         width: 360,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          EmployeeSearchField(onSelected: (id, _) => _employeeId = id),
+          EmployeeSearchField(onSelected: (id, _) => setState(() => _employeeId = id)),
           TextField(controller: _amount, decoration: const InputDecoration(labelText: 'المبلغ'), keyboardType: TextInputType.number),
         ]),
       ),
@@ -211,15 +234,21 @@ class _LongAdvanceFormState extends State<_LongAdvanceForm> {
   }
 
   Future<void> _save() async {
-    if (_employeeId == null) return;
+    if (_employeeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اختر موظفاً من نتائج البحث')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
-      await api.advanceLongCreate({
+      final advance = await api.advanceLongCreate({
         'employeeId': _employeeId,
         'totalAmount': double.tryParse(_total.text) ?? 0,
         'installments': int.tryParse(_installments.text) ?? 1,
-        'confirm': true,
       });
+      final id = advance['id'];
+      if (id != null) await api.advanceLongConfirm(id);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) { setState(() => _saving = false); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
@@ -233,7 +262,7 @@ class _LongAdvanceFormState extends State<_LongAdvanceForm> {
       content: SizedBox(
         width: 360,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          EmployeeSearchField(onSelected: (id, _) => _employeeId = id),
+          EmployeeSearchField(onSelected: (id, _) => setState(() => _employeeId = id)),
           TextField(controller: _total, decoration: const InputDecoration(labelText: 'إجمالي السلفة'), keyboardType: TextInputType.number),
           TextField(controller: _installments, decoration: const InputDecoration(labelText: 'عدد الأقساط'), keyboardType: TextInputType.number),
         ]),
