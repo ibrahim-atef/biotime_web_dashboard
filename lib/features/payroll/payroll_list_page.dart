@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/di/injection.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_dimensions.dart';
+import '../../core/widgets/hr_local_data_info.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/sellix_card.dart';
 import '../../core/widgets/status_tag.dart';
@@ -78,9 +79,19 @@ class _PayrollListPageState extends State<PayrollListPage> {
               FilledButton.icon(onPressed: _create, icon: const Icon(Icons.add, size: 18), label: const Text('كشف جديد')),
             ],
           ),
+          const HrLocalDataBanner(
+            title: 'الرواتب — تُحسب محلياً',
+            hint: 'بعد مزامنة البصمات والشيفتات: أنشئ كشفاً جديداً ثم احسبه من بيانات الحضور المحلية.',
+          ),
           const SizedBox(height: 16),
           if (_loading)
             const Center(child: CircularProgressIndicator())
+          else if (_items.isEmpty)
+            HrEmptyListCard(
+              message: 'لا توجد كشوف رواتب.\nأنشئ كشفاً جديداً للفترة الحالية ثم اضغط «حساب».',
+              actionLabel: 'كشف جديد',
+              onAction: _create,
+            )
           else
             SellixCard(
               padding: EdgeInsets.zero,

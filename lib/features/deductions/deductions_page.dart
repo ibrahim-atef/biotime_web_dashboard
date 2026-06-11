@@ -4,6 +4,7 @@ import '../../core/di/injection.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/widgets/employee_search_field.dart';
+import '../../core/widgets/hr_local_data_info.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/sellix_card.dart';
 import '../../core/widgets/status_tag.dart';
@@ -103,11 +104,15 @@ class _DeductionsPageState extends State<DeductionsPage> {
         children: [
           PageHeader(
             title: 'الاستقطاعات',
-            subtitle: 'خصومات الموظفين — تُحفظ في Odoo',
+            subtitle: 'خصومات الموظفين — بيانات محلية',
             actions: [
               IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
               FilledButton.icon(onPressed: _add, icon: const Icon(Icons.add, size: 18), label: const Text('استقطاع جديد')),
             ],
+          ),
+          const HrLocalDataBanner(
+            title: 'الاستقطاعات — بيانات محلية',
+            hint: 'تُنشأ في التطبيق وتُطبَّق على كشف الرواتب. مزامنة BioTime تجلب الموظفين والبصمات فقط.',
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -143,7 +148,7 @@ class _DeductionsPageState extends State<DeductionsPage> {
           if (_loading)
             const Center(child: CircularProgressIndicator())
           else if (items.isEmpty)
-            const SellixCard(child: Text('لا توجد استقطاعات'))
+            const HrEmptyListCard(message: 'لا توجد استقطاعات.\nأضف استقطاعاً جديداً واختر موظفاً مُزامَناً.')
           else
             SellixCard(
               padding: EdgeInsets.zero,

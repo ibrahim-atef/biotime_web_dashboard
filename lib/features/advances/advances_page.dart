@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/di/injection.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/widgets/employee_search_field.dart';
+import '../../core/widgets/hr_local_data_info.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/sellix_card.dart';
 import '../../core/widgets/status_tag.dart';
@@ -75,6 +76,11 @@ class _AdvancesPageState extends State<AdvancesPage> with SingleTickerProviderSt
               ),
             ],
           ),
+          const HrLocalDataBanner(
+            title: 'السلف — بيانات محلية',
+            hint: 'BioTime يزامن الموظفين والبصمات فقط. السلف تُسجَّل هنا بزر «سلفة جديدة» بعد مزامنة الموظفين.',
+          ),
+          const SizedBox(height: 12),
           TabBar(controller: _tabs, tabs: const [Tab(text: 'قصيرة'), Tab(text: 'طويلة')]),
           const SizedBox(height: 12),
           if (_loading)
@@ -104,6 +110,14 @@ class _AdvanceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return HrEmptyListCard(
+        message: isLong
+            ? 'لا توجد سلف طويلة الأجل.\nأنشئ سلفة من «سلفة جديدة» واختر موظفاً مُزامَناً من BioTime.'
+            : 'لا توجد سلف قصيرة.\nأنشئ سلفة من «سلفة جديدة» واختر موظفاً مُزامَناً من BioTime.',
+      );
+    }
+
     return SellixCard(
       padding: EdgeInsets.zero,
       child: ListView.builder(

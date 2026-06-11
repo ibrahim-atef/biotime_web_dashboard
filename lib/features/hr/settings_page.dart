@@ -274,6 +274,23 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 16),
+          const Text('ما يُزامَن من BioTime', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          const SellixCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('من سيرفر BioTime (زر Sync):', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                SizedBox(height: 6),
+                Text('• الموظفين والأقسام\n• الأجهزة\n• البصمات (punches)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5)),
+                SizedBox(height: 10),
+                Text('محلي في التطبيق (لا يُستورد من BioTime):', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                SizedBox(height: 6),
+                Text('• الشيفتات والجدول\n• السلف والاستقطاعات\n• كشوف الرواتب\n• طلبات الإجازة والسلف', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           const Text('Sync status (local DB)', style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           SellixCard(

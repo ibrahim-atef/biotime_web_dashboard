@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/di/injection.dart';
 import '../../core/theme/app_dimensions.dart';
+import '../../core/widgets/hr_local_data_info.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/sellix_card.dart';
 
@@ -57,9 +58,17 @@ class _ShiftsPageState extends State<ShiftsPage> {
               FilledButton.icon(onPressed: () => _openForm(), icon: const Icon(Icons.add, size: 18), label: const Text('شيفت جديد')),
             ],
           ),
+          const HrLocalDataBanner(
+            title: 'الشيفتات — بيانات محلية',
+            hint: 'أنشئ قوالب الشيفت هنا، ثم عيّنها للموظفين في «تعيينات الشيفت» وجدول الشيفتات.',
+          ),
           const SizedBox(height: 16),
           if (_loading)
             const Center(child: CircularProgressIndicator())
+          else if (_items.isEmpty)
+            const HrEmptyListCard(
+              message: 'لا توجد شيفتات.\nأنشئ شيفتاً جديداً ثم عيّنه للموظفين المُزامَنين من BioTime.',
+            )
           else
             SellixCard(
               padding: EdgeInsets.zero,
