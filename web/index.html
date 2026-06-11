@@ -1,38 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="حضوري — Attendance & Payroll">
 
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="حضوري">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>حضوري</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #F1F5F9;
+    }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: linear-gradient(160deg, #F1F5F9 0%, #EEF2FF 55%, #F8FAFC 100%);
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    #splash.splash-hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 32px 40px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .splash-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    }
+
+    .splash-icon img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+
+    .splash-title {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: 0.02em;
+    }
+
+    .splash-subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: #64748B;
+    }
+
+    .splash-spinner {
+      width: 36px;
+      height: 36px;
+      margin-top: 4px;
+      border: 3px solid #E2E8F0;
+      border-top-color: #6366F1;
+      border-radius: 50%;
+      animation: splash-spin 0.85s linear infinite;
+    }
+
+    @keyframes splash-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <div id="splash" role="status" aria-live="polite" aria-label="جاري التحميل">
+    <div class="splash-card">
+      <div class="splash-icon">
+        <img src="icons/Icon-192.png" alt="" width="44" height="44">
+      </div>
+      <h1 class="splash-title">حضوري</h1>
+      <p class="splash-subtitle">جاري التحميل...</p>
+      <div class="splash-spinner" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var removed = false;
+
+      function hideSplash() {
+        if (removed) return;
+        removed = true;
+        var splash = document.getElementById('splash');
+        if (!splash) return;
+        splash.classList.add('splash-hide');
+        window.setTimeout(function () {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 450);
+      }
+
+      window.addEventListener('flutter-first-frame', hideSplash);
+      // Safety fallback if the event is missed
+      window.setTimeout(hideSplash, 30000);
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
