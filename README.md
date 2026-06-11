@@ -13,10 +13,17 @@ flutter run -d chrome
 
 ## Deploy to GitHub Pages
 
-1. Push this folder to `https://github.com/ibrahim-atef/biotime_web_dashboard.git`
-2. In GitHub repo → **Settings → Pages → Build and deployment → Source: GitHub Actions**
-3. Optional: add repo secret `BIOTIME_API_URL` (default ngrok/public URL for testers)
-4. Push to `main` — workflow `.github/workflows/deploy-web.yml` publishes the site
+1. Push to `main` — workflow builds Flutter web and pushes to **`gh-pages`** branch
+2. **Enable Pages (required once):**
+   - Open https://github.com/ibrahim-atef/biotime_web_dashboard/settings/pages
+   - **Build and deployment → Source:** `Deploy from a branch`
+   - **Branch:** `gh-pages` → folder `/ (root)` → **Save**
+3. Wait 1–2 minutes, then open https://ibrahim-atef.github.io/biotime_web_dashboard/
+4. Optional: repo secret `BIOTIME_API_URL` = your ngrok/public backend URL
+
+### If deploy failed with 404
+
+The old `deploy-pages` action needs **Source: GitHub Actions**. This repo now uses **`gh-pages` branch** instead — follow step 2 above, then re-run the workflow from the **Actions** tab.
 
 ## Backend on your PC (for external testers)
 
